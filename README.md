@@ -1,4 +1,4 @@
-# 🎮 Tic-Tac-Toe AI — Minimax Algorithm
+# Tic-Tac-Toe AI — Minimax Algorithm
 
 A web-based **Tic-Tac-Toe game** powered by an **Artificial Intelligence opponent** that uses the **Minimax algorithm** for optimal decision-making.  
 Choose between two difficulty levels — *Easy* and *Hard* — and enjoy a modern, animated, and fully responsive gameplay experience.
@@ -35,16 +35,6 @@ It ensures:
 2. Choose your move (click on an empty cell)  
 3. Watch the AI respond intelligently  
 4. Try to beat it — if you can! 😎  
-
----
-
-## 📄 Project Structure
-📦 tic-tac-toe-ai-minimax
-┣ 📄 index.html → Main game file (UI + logic)
-┗ 📘 README.md → Documentation
-
-yaml
-Copier le code
 
 ---
 
