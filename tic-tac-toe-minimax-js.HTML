@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe IA 🎮</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(circle at top left, #1a1a2e, #16213e);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.3em;
+      margin-bottom: 10px;
+      color: #00fff5;
+      text-shadow: 0 0 10px #00fff5;
+    }
+
+    .board {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      margin: 20px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      position: relative;
+    }
+
+    .cell:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    .cell.X {
+      color: #ff4b5c;
+      text-shadow: 0 0 8px #ff4b5c;
+    }
+
+    .cell.O {
+      color: #00fff5;
+      text-shadow: 0 0 8px #00fff5;
+    }
+
+    /* Ligne de victoire */
+    .win-line {
+      position: absolute;
+      background: linear-gradient(90deg, #00fff5, #ff4b5c);
+      border-radius: 5px;
+      animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 10px #00fff5; }
+      to { box-shadow: 0 0 20px #ff4b5c; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      align-items: center;
+    }
+
+    button, select {
+      background: #00fff5;
+      border: none;
+      color: #16213e;
+      padding: 10px 20px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover, select:hover {
+      background: #ff4b5c;
+      color: #fff;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-size: 1.2em;
+      color: #fff;
+      text-shadow: 0 0 8px #00fff5;
+    }
+
+    select {
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic-Tac-Toe IA 🤖</h1>
+
+  <div class="board" id="board"></div>
+
+  <div class="controls">
+    <label for="difficulty">Difficulté :</label>
+    <select id="difficulty">
+      <option value="0">Facile</option>
+      <option value="1" selected>Difficile</option>
+    </select>
+    <button id="restart">🔁 Rejouer</button>
+  </div>
+
+  <div class="message" id="message"></div>
+
+  <script>
+    const boardElement = document.getElementById("board");
+    const messageElement = document.getElementById("message");
+    const restartButton = document.getElementById("restart");
+    const difficultySelect = document.getElementById("difficulty");
+
+    let board = Array(9).fill(null);
+    let player = "X";
+    let ai = "O";
+    let gameOver = false;
+    let winLineElement = null;
+
+    function renderBoard() {
+      boardElement.innerHTML = "";
+      board.forEach((cell, index) => {
+        const div = document.createElement("div");
+        div.classList.add("cell");
+        if (cell) div.classList.add(cell);
+        div.textContent = cell ? cell : "";
+        div.addEventListener("click", () => playerMove(index));
+        boardElement.appendChild(div);
+      });
+    }
+
+    function checkWinner(b) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+      for (const [a, b1, c] of winPatterns) {
+        if (b[a] && b[a] === b[b1] && b[a] === b[c]) return { winner: b[a], pattern: [a, b1, c] };
+      }
+      if (b.every(cell => cell)) return { winner: "draw" };
+      return null;
+    }
+
+    function minimax(b, depth, isMaximizing) {
+      const winner = checkWinner(b);
+      if (winner?.winner === ai) return 10 - depth;
+      if (winner?.winner === player) return depth - 10;
+      if (winner?.winner === "draw") return 0;
+
+      const scores = [];
+      for (let i = 0; i < 9; i++) {
+        if (!b[i]) {
+          b[i] = isMaximizing ? ai : player;
+          const score = minimax(b, depth + 1, !isMaximizing);
+          b[i] = null;
+          scores.push(score);
+        }
+      }
+      return isMaximizing ? Math.max(...scores) : Math.min(...scores);
+    }
+
+    function aiMove() {
+      let difficulty = parseInt(difficultySelect.value);
+      let bestScore = -Infinity;
+      let move;
+
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = ai;
+          const score = minimax(board, 0, false);
+          board[i] = null;
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+
+      // Si facile : parfois joue un coup aléatoire
+      if (difficulty === 0 && Math.random() < 0.6) {
+        const empty = board.map((v, i) => (v ? null : i)).filter(v => v !== null);
+        move = empty[Math.floor(Math.random() * empty.length)];
+      }
+
+      board[move] = ai;
+      renderBoard();
+      checkGameState();
+    }
+
+    function playerMove(index) {
+      if (gameOver || board[index]) return;
+      board[index] = player;
+      renderBoard();
+      checkGameState();
+      if (!gameOver) setTimeout(aiMove, 400);
+    }
+
+    function drawWinLine(pattern) {
+      if (!pattern) return;
+      const [a, b, c] = pattern;
+      const positions = [
+        { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
+        { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 },
+        { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }
+      ];
+
+      const start = positions[a];
+      const end = positions[c];
+
+      const line = document.createElement("div");
+      line.classList.add("win-line");
+      boardElement.appendChild(line);
+
+      const x1 = start.x * 110 + 50;
+      const y1 = start.y * 110 + 50;
+      const x2 = end.x * 110 + 50;
+      const y2 = end.y * 110 + 50;
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      line.style.width = `${length}px`;
+      line.style.height = `5px`;
+      line.style.left = `${x1}px`;
+      line.style.top = `${y1}px`;
+      line.style.transform = `rotate(${angle}deg)`;
+      line.style.transformOrigin = "0 50%";
+
+      winLineElement = line;
+    }
+
+    function checkGameState() {
+      const result = checkWinner(board);
+      if (result?.winner) {
+        gameOver = true;
+        if (result.winner === "draw") {
+          messageElement.textContent = "Match nul 😐";
+        } else {
+          drawWinLine(result.pattern);
+          messageElement.textContent = result.winner === player
+            ? "Bravo ! Vous avez gagné 🎉"
+            : "L'IA a gagné 🤖";
+        }
+      }
+    }
+
+    restartButton.addEventListener("click", () => {
+      board = Array(9).fill(null);
+      gameOver = false;
+      messageElement.textContent = "";
+      if (winLineElement) winLineElement.remove();
+      renderBoard();
+    });
+
+    renderBoard();
+  </script>
+</body>
+</html>
